@@ -24,7 +24,7 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
-Verify that we can chdir() to the directory in which an Variables
+Verify that we can chdir() to the directory in which a Variables
 file lives by using the __name__ value.
 """
 
@@ -43,7 +43,8 @@ SConscript('subdir/SConscript')
 
 SConscript_contents = """\
 Import("opts")
-env = Environment()
+_ = DefaultEnvironment(tools=[])
+env = Environment(tools=[])
 opts.Update(env)
 print("VARIABLE = "+repr(env['VARIABLE']))
 """
@@ -66,7 +67,7 @@ expect = """\
 VARIABLE = 'opts2.cfg value'
 """
 
-test.run(arguments = '-q -Q .', stdout=expect)
+test.run(arguments='-q -Q .', stdout=expect)
 
 test.pass_test()
 

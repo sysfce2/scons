@@ -23,12 +23,21 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+"""
+Test general behavior of Variables including save files.
+
+Note this test is coded to expect a compiler tool to have run
+so that CC and CCFLAGS are set. The first test "run" collects
+those values and uses them as a baseline for the actual tests.
+We should be able to mock that in some way.
+"""
+
 import TestSCons
 
 test = TestSCons.TestSCons()
 
 test.write('SConstruct', """\
-DefaultEnvironment(tools=[])  # test speedup
+_ = DefaultEnvironment(tools=[])  # test speedup
 env = Environment()
 print(env['CC'])
 print(" ".join(env['CCFLAGS']))
@@ -156,7 +165,7 @@ check(['1', '0', cc, (ccflags + ' -O').strip(), 'v', 'v'])
 test.run(arguments='DEBUG_BUILD=1')
 check(['1', '1', cc, (ccflags + ' -O -g').strip(), 'v', 'v'])
 
-test.run(arguments='-h', stdout = """\
+test.run(arguments='-h', stdout="""\
 scons: Reading SConscript files ...
 1
 0
@@ -232,7 +241,7 @@ def checkSave(file, expected):
     gdict = {}
     ldict = {}
     with open(file, 'r') as f:
-       contents = f.read()
+        contents = f.read()
     exec(contents, gdict, ldict)
     assert expected == ldict, "%s\n...not equal to...\n%s" % (expected, ldict)
 
@@ -277,7 +286,7 @@ opts.Add('LISTOPTION_TEST',
          names = ['a','b','c',])
 
 DefaultEnvironment(tools=[])  # test speedup
-env = Environment(variables=opts)
+env = Environment(variables=opts, tools=[])
 
 print(env['RELEASE_BUILD'])
 print(env['DEBUG_BUILD'])
@@ -288,18 +297,18 @@ opts.Save('variables.saved', env)
 
 # First check for empty output file when nothing is passed on command line
 test.run()
-check(['0','1'])
+check(['0', '1'])
 checkSave('variables.saved', {})
 
 # Now specify one option the same as default and make sure it doesn't write out
 test.run(arguments='DEBUG_BUILD=1')
-check(['0','1'])
+check(['0', '1'])
 checkSave('variables.saved', {})
 
 # Now specify same option non-default and make sure only it is written out
 test.run(arguments='DEBUG_BUILD=0 LISTOPTION_TEST=a,b')
-check(['0','0'])
-checkSave('variables.saved',{'DEBUG_BUILD':0, 'LISTOPTION_TEST':'a,b'})
+check(['0', '0'])
+checkSave('variables.saved', {'DEBUG_BUILD': 0, 'LISTOPTION_TEST': 'a,b'})
 
 test.write('SConstruct', """
 opts = Variables('custom.py')
@@ -333,7 +342,7 @@ Help(
 )
 """)
 
-test.run(arguments='-h', stdout = """\
+test.run(arguments='-h', stdout="""\
 scons: Reading SConscript files ...
 scons: done reading SConscript files.
 Variables settable in custom.py or on the command line:
@@ -355,7 +364,7 @@ UNSPECIFIED: An option with no value
     actual: None
 
 Use scons -H for help about SCons built-in command-line options.
-"""%cc)
+""" % cc)
 
 test.write('SConstruct', """
 import SCons.Variables

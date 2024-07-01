@@ -141,7 +141,7 @@ class _PathVariableClass:
 
     # lint: W0622: Redefining built-in 'help' (redefined-builtin)
     def __call__(
-        self, key, help: str, default, validator: Optional[Callable] = None
+        self, key: str, help: str, default, validator: Optional[Callable] = None
     ) -> Tuple[str, str, str, Callable, None]:
         """Return a tuple describing a path list SCons Variable.
 
@@ -161,7 +161,7 @@ class _PathVariableClass:
             helpmsg = f'{help} ( /path/to/{key[0]} )'
         else:
             helpmsg = f'{help} ( /path/to/{key} )'
-        return (key, helpmsg, default, validator, None)
+        return key, helpmsg, default, validator, None
 
 
 PathVariable = _PathVariableClass()

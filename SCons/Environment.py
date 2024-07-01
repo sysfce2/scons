@@ -510,13 +510,6 @@ class BuilderDict(UserDict):
             self.__setitem__(i, v)
 
 
-_is_valid_var = re.compile(r'[_a-zA-Z]\w*$')
-
-def is_valid_construction_var(varstr) -> bool:
-    """Return True if *varstr* is a legitimate construction variable."""
-    return _is_valid_var.match(varstr)
-
-
 class SubstitutionEnvironment:
     """Base class for different flavors of construction environments.
 
@@ -587,26 +580,20 @@ class SubstitutionEnvironment:
         return self._dict[key]
 
     def __setitem__(self, key, value):
-        # This is heavily used.  This implementation is the best we have
-        # according to the timings in bench/env.__setitem__.py.
-        #
-        # The "key in self._special_set_keys" test here seems to perform
-        # pretty well for the number of keys we have.  A hard-coded
-        # list worked a little better in Python 2.5, but that has the
-        # disadvantage of maybe getting out of sync if we ever add more
-        # variable names.
-        # So right now it seems like a good trade-off, but feel free to
-        # revisit this with bench/env.__setitem__.py as needed (and
-        # as newer versions of Python come out).
         if key in self._special_set_keys:
             self._special_set[key](self, key, value)
         else:
-            # If we already have the entry, then it's obviously a valid
-            # key and we don't need to check.  If we do check, using a
-            # global, pre-compiled regular expression directly is more
-            # efficient than calling another function or a method.
-            if key not in self._dict and not _is_valid_var.match(key):
-                raise UserError("Illegal construction variable `%s'" % key)
+            # Performance: since this is heavily used, try to avoid checking
+            # if the variable is valid unless necessary. bench/__setitem__.py
+            # times a bunch of different approaches. Based the most recent
+            # run, against Python 3.6-3.13(beta), the best we can do across
+            # different combinations of actions is to use a membership test
+            # to see if we already have the variable, if so it must already
+            # have been checked, so skip; if we do check, "isidentifier()"
+            # (new in Python 3 so wasn't in benchmark until recently)
+            # on the key is the best.
+            if key not in self._dict and not key.isidentifier():
+                raise UserError(f"Illegal construction variable {key!r}")
             self._dict[key] = value
 
     def get(self, key, default=None):
@@ -1568,16 +1555,28 @@ class Base(SubstitutionEnvironment):
                     self._dict[key] = dk + val
         self.scanner_map_delete(kw)
 
-    def Clone(self, tools=[], toolpath=None, parse_flags = None, **kw):
+    def Clone(self, tools=[], toolpath=None, variables=None, parse_flags=None, **kw):
         """Return a copy of a construction Environment.
 
-        The copy is like a Python "deep copy"--that is, independent
-        copies are made recursively of each objects--except that
-        a reference is copied when an object is not deep-copyable
-        (like a function).  There are no references to any mutable
-        objects in the original Environment.
-        """
+        The copy is like a Python "deep copy": independent copies are made
+        recursively of each object, except that a reference is copied when
+        an object is not deep-copyable (like a function).  There are no
+        references to any mutable objects in the original environment.
 
+        Unrecognized keyword arguments are taken as construction variable
+        assignments.
+
+        Arguments:
+           tools: list of tools to initialize.
+           toolpath: list of paths to search for tools.
+           variables: a :class:`~SCons.Variables.Variables` object to
+              use to populate construction variables from command-line
+              variables.
+           parse_flags: option strings to parse into construction variables.
+
+        .. versionadded:: 4.8.0
+              The optional *variables* parameter was added.
+        """
         builders = self._dict.get('BUILDERS', {})
 
         clone = copy.copy(self)
@@ -1603,6 +1602,8 @@ class Base(SubstitutionEnvironment):
         for key, value in kw.items():
             new[key] = SCons.Subst.scons_subst_once(value, self, key)
         clone.Replace(**new)
+        if variables:
+            variables.Update(clone)
 
         apply_tools(clone, tools, toolpath)
 
@@ -2571,8 +2572,12 @@ class OverrideEnvironment(Base):
             return self.__dict__['__subject'].__getitem__(key)
 
     def __setitem__(self, key, value):
-        if not is_valid_construction_var(key):
-            raise UserError("Illegal construction variable `%s'" % key)
+        # This doesn't have the same performance equation as a "real"
+        # environment: in an override you're basically just writing
+        # new stuff; it's not a common case to be changing values already
+        # set in the override dict, so don't spend time checking for existance.
+        if not key.isidentifier():
+            raise UserError(f"Illegal construction variable {key!r}")
         self.__dict__['overrides'][key] = value
 
     def __delitem__(self, key):

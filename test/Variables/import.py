@@ -24,7 +24,7 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
-Verify that an Variables file in a different directory can import
+Verify that a Variables file in a different directory can import
 a module in that directory.
 """
 
@@ -45,7 +45,8 @@ SConscript('subdir/SConscript')
 
 SConscript_contents = """\
 Import("opts")
-env = Environment()
+_ = DefaultEnvironment(tools=[])
+env = Environment(tools=[])
 opts.Update(env)
 print("VARIABLE = %s"%env.get('VARIABLE'))
 """
@@ -62,7 +63,7 @@ test.write(['subdir', 'SConscript'], SConscript_contents)
 
 expect = "VARIABLE = bin/local_options.py\n"
 
-test.run(arguments = '-q -Q .', stdout = expect)
+test.run(arguments='-q -Q .', stdout=expect)
 
 test.pass_test()
 

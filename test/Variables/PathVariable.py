@@ -40,16 +40,12 @@ def check(expect):
     result = test.stdout().split('\n')
     assert result[1:len(expect)+1] == expect, (result[1:len(expect)+1], expect)
 
-#### test PathVariable ####
 
-test.subdir('lib', 'qt', ['qt', 'lib'], 'nolib' )
+test.subdir('lib', 'qt', ['qt', 'lib'], 'nolib')
 workpath = test.workpath()
-libpath = os.path.join(workpath, 'lib')
 
 test.write(SConstruct_path, """\
-from SCons.Variables.PathVariable import PathVariable
-PV = PathVariable
-
+from SCons.Variables.PathVariable import PathVariable as PV
 from SCons.Variables import PathVariable
 
 qtdir = r'%s'
@@ -60,8 +56,8 @@ opts.AddVariables(
     PV('qt_libraries', 'where the Qt library is installed', r'%s'),
 )
 
-DefaultEnvironment(tools=[])  # test speedup
-env = Environment(variables=opts)
+_ = DefaultEnvironment(tools=[])  # test speedup
+env = Environment(variables=opts, tools=[])
 Help(opts.GenerateHelpText(env))
 
 print(env['qtdir'])
@@ -69,7 +65,7 @@ print(env['qt_libraries'])
 print(env.subst('$qt_libraries'))
 
 Default(env.Alias('dummy', None))
-""" % (workpath, os.path.join('$qtdir', 'lib') ))
+""" % (workpath, os.path.join('$qtdir', 'lib')))
 
 qtpath = workpath
 libpath = os.path.join(qtpath, 'lib')
@@ -92,7 +88,7 @@ test.run(arguments=['qtdir=%s' % qtpath, 'qt_libraries=%s' % libpath])
 check([qtpath, libpath, libpath])
 
 qtpath = os.path.join(workpath, 'non', 'existing', 'path')
-SConstruct_file_line = test.python_file_line(test.workpath('SConstruct'), 15)[:-1]
+SConstruct_file_line = test.python_file_line(test.workpath('SConstruct'), 13)[:-1]
 
 expect_stderr = """
 scons: *** Path for variable 'qtdir' does not exist: %(qtpath)s

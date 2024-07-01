@@ -37,7 +37,7 @@ str_False = str(False)
 test = TestSCons.TestSCons()
 
 workpath = test.workpath()
-qtpath  = os.path.join(workpath, 'qt')
+qtpath = os.path.join(workpath, 'qt')
 libpath = os.path.join(qtpath, 'lib')
 libdirvar = os.path.join('$qtdir', 'lib')
 
@@ -92,7 +92,8 @@ opts.AddVariables(
     PathVariable('qt_libraries', 'where the Qt library is installed', r'%(libdirvar)s'),
 )
 
-env = Environment(variables=opts)
+_ = DefaultEnvironment(tools=[])
+env = Environment(variables=opts, tools=[])
 Help(opts.GenerateHelpText(env))
 
 print(env['warnings'])
