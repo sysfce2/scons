@@ -76,6 +76,17 @@ CHANGED/ENHANCED EXISTING FUNCTIONALITY
   always returns  a dict. The default remains to return different
   types depending on whether zero, one, or multiple construction
 
+- A Variables object now makes available a "defaulted" attribute,
+  a list of variable names that were set in the environment with
+  their values taken from the default in the variable description
+  (if a variable was set to the same value as the default in one
+  of the input sources, it is not included in this list).
+
+- If a build Variable is created with no aliases, the name of the
+  Variable is no longer listed in its aliases. Internally, the name
+  and aliases are considered together anyway so this should not have
+  any effect except for being visible to custom help text formatters.
+
 FIXES
 -----
 
@@ -138,7 +149,28 @@ FIXES
   not designed to work for the root user.
 
 - Make sure unknown variables from a Variables file are recognized
-  as such (issue #4645)
+  as such. Previously only unknowns from the command line were
+  recognized (issue #4645).
+
+- Update ninja tool to use ninja.BIN_DIR to find pypi packaged ninja binary.
+  python ninja package version 1.11.1.2 changed the location and previous
+  logic no longer worked.
+
+- The (optional) C Conditional Scanner now does limited macro
+  replacement on the contents of CPPDEFINES, to improve finding deps
+  that are conditionally included.  Previously replacement was only
+  done on macro definitions found in the file being scanned.
+  Only object-like macros are replaced (not function-like), and
+  only on a whole-word basis; recursion is limited to five levels
+  and does not error out if that limit is reached (issue #4523).
+
+- Minor modernization: make use of stat object's st_mode, st_mtime
+  and other attributes rather than indexing into stat return.
+
+- Ninja's TEMPLATE rule pool changed from `local_pool` to `install_pool``
+  hoping it will fix a race condition that can occurs when Ninja defers
+  to SCons to build.
+
 
 IMPROVEMENTS
 ------------
@@ -181,6 +213,8 @@ DOCUMENTATION
 
 - Update Clean and NoClean documentation.
 
+- Improved Variables documentation.
+
 DEVELOPMENT
 -----------
 
@@ -195,6 +229,11 @@ DEVELOPMENT
   via top-level `from __future__ import annotations`.
 
 - Implemented type hints for Nodes.
+
+- Added TestSCons.NINJA_BINARY to TestSCons to centralize logic to find ninja binary
+
+- Refactored SCons.Tool.ninja -> SCons.Tool.ninja_tool, and added alias so env.Tool('ninja')
+  will still work. This avoids conflicting with the pypi module ninja.
 
 Thanks to the following contributors listed below for their contributions to this release.
 ==========================================================================================

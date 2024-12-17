@@ -85,10 +85,21 @@ RELEASE  VERSION/DATE TO BE FILLED IN LATER
       via top-level `from __future__ import annotations`.
     - Implemented type hints for Nodes.
 
+  From William Deegan:
+    - Update ninja tool to use ninja.BIN_DIR to find pypi packaged ninja binary.
+      python ninja package version 1.11.1.2 changed the location and previous
+      logic no longer worked.
+    - Added TestSCons.NINJA_BINARY to TestSCons to centralize logic to find ninja binary
+    - Refactored SCons.Tool.ninja -> SCons.Tool.ninja_tool, and added alias so
+      env.Tool('ninja') will still work. This avoids conflicting with the pypi module ninja.
+
   From Alex James:
     - On Darwin, PermissionErrors are now handled while trying to access
       /etc/paths.d. This may occur if SCons is invoked in a sandboxed
       environment (such as Nix).
+
+  From Prabhu S. Khalsa:
+    - Fix typo in man page
 
   From Dillan Mills:
     - Fix support for short options (`-x`).
@@ -152,7 +163,37 @@ RELEASE  VERSION/DATE TO BE FILLED IN LATER
       variable names are given.
     - Update Clean and NoClean documentation.
     - Make sure unknown variables from a Variables file are recognized
-      as such (issue #4645)
+      as such. Previously only unknowns from the command line were
+      recognized (issue #4645).
+    - A Variables object now makes available a "defaulted" attribute,
+      a list of variable names that were set in the environment with
+      their values taken from the default in the variable description
+      (if a variable was set to the same value as the default in one
+      of the input sources, it is not included in this list).
+    - If a build Variable is created with no aliases, the name of the
+      Variable is no longer listed in its aliases. Internally, the name
+      and aliases are considered together anyway so this should not have
+      any effect except for being visible to custom help text formatters.
+    - A build Variable is now a dataclass, with initialization moving to
+      the automatically provided method; the Variables class no longer
+      writes directly to a Variable (makes static checkers happier).
+    - Improved Variables documentation.
+    - The (optional) C Conditional Scanner now does limited macro
+      replacement on the contents of CPPDEFINES, to improve finding deps
+      that are conditionally included.  Previously replacement was only
+      done on macro definitions found in the file being scanned.
+      Only object-like macros are replaced (not function-like), and
+      only on a whole-word basis; recursion is limited to five levels
+      and does not error out if that limit is reached (issue #4523).
+    - Minor modernization: make use of stat object's st_mode, st_mtime
+      and other attributes rather than indexing into stat return.
+    - The update-release-info test is adapted to accept changed help output
+      introduced in Python 3.12.8/3.13.1.
+
+    From Adam Scott:
+    - Changed Ninja's TEMPLATE rule pool to use `install_pool` instead of
+      `local_pool`, hoping it will fix a race condition that can occurs when
+      Ninja defers to SCons to build.
 
 
 RELEASE 4.8.1 -  Tue, 03 Sep 2024 17:22:20 -0700

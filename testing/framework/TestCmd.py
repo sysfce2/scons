@@ -337,6 +337,9 @@ except AttributeError:
     IS_ROOT = False
 NEED_HELPER = os.environ.get('SCONS_NO_DIRECT_SCRIPT')
 
+
+
+
 # sentinel for cases where None won't do
 _Null = object()
 
@@ -808,7 +811,7 @@ else:
                     st = os.stat(f)
                 except OSError:
                     continue
-                if stat.S_IMODE(st[stat.ST_MODE]) & 0o111:
+                if stat.S_IMODE(st.st_mode) & stat.S_IXUSR:
                     return f
         return None
 
@@ -1975,7 +1978,7 @@ class TestCmd:
                     pass
                 else:
                     os.chmod(fname, stat.S_IMODE(
-                        st[stat.ST_MODE] | stat.S_IREAD))
+                        st.st_mode | stat.S_IREAD))
         else:
             def do_chmod(fname) -> None:
                 try:
@@ -1984,7 +1987,7 @@ class TestCmd:
                     pass
                 else:
                     os.chmod(fname, stat.S_IMODE(
-                        st[stat.ST_MODE] & ~stat.S_IREAD))
+                        st.st_mode & ~stat.S_IREAD))
 
         if os.path.isfile(top):
             # If it's a file, that's easy, just chmod it.
@@ -2044,7 +2047,7 @@ class TestCmd:
                     except OSError:
                         pass
                     else:
-                        os.chmod(fname, stat.S_IMODE(st[stat.ST_MODE] | stat.S_IWRITE))
+                        os.chmod(fname, stat.S_IMODE(st.st_mode | stat.S_IWRITE))
             else:
                 def do_chmod(fname) -> None:
                     try:
@@ -2053,7 +2056,7 @@ class TestCmd:
                         pass
                     else:
                         os.chmod(fname, stat.S_IMODE(
-                            st[stat.ST_MODE] & ~stat.S_IWRITE))
+                            st.st_mode & ~stat.S_IWRITE))
 
         if os.path.isfile(top):
             do_chmod(top)
@@ -2084,7 +2087,7 @@ class TestCmd:
                     pass
                 else:
                     os.chmod(fname, stat.S_IMODE(
-                        st[stat.ST_MODE] | stat.S_IEXEC))
+                        st.st_mode | stat.S_IEXEC))
         else:
             def do_chmod(fname) -> None:
                 try:
@@ -2093,7 +2096,7 @@ class TestCmd:
                     pass
                 else:
                     os.chmod(fname, stat.S_IMODE(
-                        st[stat.ST_MODE] & ~stat.S_IEXEC))
+                        st.st_mode & ~stat.S_IEXEC))
 
         if os.path.isfile(top):
             # If it's a file, that's easy, just chmod it.
